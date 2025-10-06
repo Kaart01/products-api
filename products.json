@@ -1,0 +1,4 @@
+[
+  { "code": "CR4356234", "name": "Widget A", "cost": 100, "details": "Small widget" },
+  { "code": "CR4356235", "name": "Widget B", "cost": 150, "details": "Medium widget" }
+]
