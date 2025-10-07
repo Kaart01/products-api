@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Product Search</title>
+  <style>
+    body{font-family:Segoe UI,Arial;max-width:900px;margin:30px auto;padding:10px}
+    input{padding:8px;width:260px;font-size:16px}
+    button{padding:8px 12px;font-size:16px;margin-left:6px}
+    .result{margin-top:20px;padding:12px;border-radius:8px;background:#f3f3f3}
+    .notfound{color:#b00}
+    pre{white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <h2> Product Search</h2>
+  <div>
+    <input id="productInput" placeholder="Type product no (e.g. CR4356234)" />
+    <button id="searchBtn">Search</button>
+  </div>
+  <div id="result" class="result" style="display:none"></div>
+
+<script>
+const PRODUCTS_JSON = './products.json';
+const input = document.getElementById('productInput');
+const btn = document.getElementById('searchBtn');
+const out = document.getElementById('result');
+
+function showNotFound(q){
+  out.style.display = 'block';
+  out.innerHTML = '<div class="notfound">No product found for <b>' + q + '</b> (simulated 404)</div>';
+}
+
+async function doSearch(q){
+  if(!q){ out.style.display='block'; out.textContent = 'Please enter a product number.'; return; }
+  out.style.display='block';
+  out.textContent = 'Searching...';
+  try{
+    const r = await fetch(PRODUCTS_JSON, {cache: "no-cache"});
+    if(!r.ok) throw new Error('Failed to load products.json: ' + r.status);
+    const data = await r.json();
+    const list = Array.isArray(data) ? data : (Array.isArray(data.products) ? data.products : Object.values(data));
+
+    const qnorm = q.toString().trim().toLowerCase();
+    const matches = list.filter(item => {
+      if(!item) return false;
+      for(const key in item){
+        const val = item[key];
+        if(val && val.toString().trim().toLowerCase() === qnorm) return true;
+      }
+      return false;
+    });
+
+    if(matches.length === 0){
+      showNotFound(q);
+    } else {
+      const first = matches[0];
+      out.style.display='block';
+      out.innerHTML = '<h3>Result</h3><pre>' + JSON.stringify(first, null, 2) + '</pre>';
+    }
+  } catch(err){
+    out.style.display='block';
+    out.innerHTML = '<div class="notfound">Error: ' + err.message + '</div>';
+  }
+}
+
+btn.addEventListener('click', ()=> doSearch(input.value));
+input.addEventListener('keydown', e => { if(e.key === 'Enter') doSearch(input.value); });
+
+// Auto-search when ?product=... is in the URL
+const urlParams = new URLSearchParams(window.location.search);
+const initialProduct = urlParams.get('product');
+if(initialProduct){
+  input.value = initialProduct;
+  doSearch(initialProduct);
+}
+</script>
+</body>
+</html>
